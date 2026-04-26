@@ -19,7 +19,7 @@ pipeline {
                 script {
                     echo "Running Trivy via Shell..."
                     // We use the shell directly. This doesn't need any Jenkins plugins!
-                    sh "docker run --rm -v /var/jenkins_home/workspace/zero-trust-app-pipeline:/apps aquasec/trivy:latest fs --severity HIGH,CRITICAL --exit-code 1 /apps"
+                    sh "docker run --rm -v ${WORKSPACE}:/apps aquasec/trivy:latest fs --severity HIGH,CRITICAL --exit-code 1 /apps"
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image via Shell..."
-                    sh "docker build -t my-app:${env.BUILD_ID} ."
+                    sh "docker build -t fedi-zero-trust-app:${env.BUILD_ID} ."
                 }
             }
         }
