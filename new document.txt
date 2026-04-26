@@ -1,0 +1,20 @@
+docker run -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+
+
+Jenkins  cred :
+admin
+Passw@rd2050
+
+
+https://gitlab.com/nanuchi/techworld-js-docker-demo-app.git
+
+
+=============================
+WEBHOOK PAYLOUD URL 
+=============================
+https://smee.io/Z6F8Kve1hVmazrGu
+
+
+===========================================================================================================================
+docker run -d --name smee-client   --network=host   --restart=always   node:alpine   sh -c "npx smee-client -u https://smee.io/Z6F8Kve1hVmazrGu -t http://127.0.0.1:8080/github-webhook/"
+===========================================================================================================================
