@@ -13,6 +13,13 @@ pipeline {
                 checkout scm
             }
         }
+
+        stage('Debug Paths') {
+            steps {
+                    sh 'ls -la ${WORKSPACE}'
+                    sh 'pwd'
+            }
+        }
 		
 		stage('SCA Security Scan') {
             steps {
