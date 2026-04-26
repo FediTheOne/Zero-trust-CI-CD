@@ -15,20 +15,20 @@ pipeline {
         }
 		
 		stage('SCA Security Scan') {
-			steps {
-				script {
-					// We use --severity HIGH,CRITICAL to only block dangerous builds
-					// --exit-code 1 tells Jenkins to mark the stage as FAILED if findings exist
-					sh "docker run --rm -v \$(pwd):/apps aquasec/trivy:latest fs --severity HIGH,CRITICAL --exit-code 1 /apps"
-				}
-			}
-		}
+            steps {
+                script {
+                    echo "Running Trivy via Shell..."
+                    // We use the shell directly. This doesn't need any Jenkins plugins!
+                    sh "docker run --rm -v /var/jenkins_home/workspace/zero-trust-app-pipeline:/apps aquasec/trivy:latest fs --severity HIGH,CRITICAL --exit-code 1 /apps"
+                }
+            }
+        }
 
         stage('Build Image') {
             steps {
                 script {
-                    // This command triggers the multi-stage build you just checked
-                    sh "docker build -t ${IMAGE_TAG} ."
+                    echo "Building Docker Image via Shell..."
+                    sh "docker build -t my-app:${env.BUILD_ID} ."
                 }
             }
         }
