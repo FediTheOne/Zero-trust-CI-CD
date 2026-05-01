@@ -25,16 +25,16 @@ pipeline {
             }
         }
 		
-	    stage('SCA Security Scan') {
+        stage('SCA Security Scan') {
             steps {
-                sh '''
-                    wget -q https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_64bit.tar.gz
-                    tar zxvf trivy_*_64bit.tar.gz
-                    chmod +x trivy
-                    ./trivy fs --severity HIGH,CRITICAL --exit-code 1 .
-                '''
-  }
-}
+                    sh '''
+                        docker run --rm \
+                        -v $(pwd):/app \
+                        aquasec/trivy:latest \
+                        fs --severity HIGH,CRITICAL --exit-code 1 /app
+                    '''
+            }
+        }
 
         stage('Build Image') {
             steps {
