@@ -25,13 +25,16 @@ pipeline {
             }
         }
 		
-		stage('SCA Security Scan') {
+	    stage('SCA Security Scan') {
             steps {
-                wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Linux-64bit.tar.gz
-                tar zxvf trivy_0.50.0_Linux-64bit.tar.gz
-                ./trivy fs --severity HIGH,CRITICAL --exit-code 1 . 
-            }
-        }
+                sh '''
+                    wget -q https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_64bit.tar.gz
+                    tar zxvf trivy_*_64bit.tar.gz
+                    chmod +x trivy
+                    ./trivy fs --severity HIGH,CRITICAL --exit-code 1 .
+                '''
+  }
+}
 
         stage('Build Image') {
             steps {
