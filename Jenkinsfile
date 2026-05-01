@@ -18,13 +18,6 @@ pipeline {
             
         }
 
-        stage('Checkout') {
-            steps {
-                cleanWs() // Deletes everything in the workspace
-                checkout scm
-            }
-        }
-
         stage('Debug Paths') {
             steps {
                     sh 'ls -la ${WORKSPACE}'
