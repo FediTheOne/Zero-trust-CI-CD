@@ -1,53 +1,49 @@
 # ==========================================
-# Stage 1: Builder (Heavy dependencies)
+# Stage 1: Builder
 # ==========================================
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install OS-level build dependencies (discarded in final image)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-#Install Docker client
-RUN curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-17.04.0-ce.tgz \
-  && tar xzvf docker-17.04.0-ce.tgz \
-  && mv docker/docker /usr/local/bin \
-  && rm -r docker docker-17.04.0-ce.tgz
-
-# Create a virtual environment and install dependencies
 COPY requirements.txt .
+
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ==========================================
-# Stage 2: Runtime (Minimal and Secure)
+# Stage 2: Runtime
 # ==========================================
-FROM python:3.11-slim AS runtime
+FROM python:3.11-slim
 
-# Security & performance environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# 1. Create a non-root user and group (Least Privilege)
+# Create non-root user
 RUN addgroup --system appgroup && adduser --system --group appuser
 
-# 2. Copy ONLY the compiled dependencies from the builder stage
+# Copy dependencies only
 COPY --from=builder /opt/venv /opt/venv
 
-# 3. Copy the actual application code
+# Copy app safely
 COPY . .
 
-# 4. Enforce strict ownership
+# Set ownership
 RUN chown -R appuser:appgroup /app
 
-# 5. Drop root privileges immediately
 USER appuser
 
 EXPOSE 8080
 
-# 6. Define the execution command
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080')"
+
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
