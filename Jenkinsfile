@@ -27,11 +27,9 @@ pipeline {
 		
 		stage('SCA Security Scan') {
             steps {
-                script {
-                    echo "Running Trivy via Shell..."
-                    // We use the shell directly. This doesn't need any Jenkins plugins!
-                    sh "docker run --rm -v ${WORKSPACE}:/apps aquasec/trivy:latest fs --severity HIGH,CRITICAL --exit-code 1 /apps"
-                }
+                wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.0_Linux-64bit.tar.gz
+                tar zxvf trivy_0.50.0_Linux-64bit.tar.gz
+                ./trivy fs --severity HIGH,CRITICAL --exit-code 1 . 
             }
         }
 
