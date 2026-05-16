@@ -1,53 +1,43 @@
 pipeline {
     agent any // Later we will move this to a K8s pod agent
 
+    options {
+        // Ensures a clean workspace every time, preventing leftover Git errors
+        skipDefaultCheckout()
+    }
+
     environment {
         // Use the Git Commit SHA for unique, immutable tagging
-        IMAGE_TAG = "myapp:${env.GIT_COMMIT.take(7)}"
+        IMAGE_TAG = "fedi-zero-trust-app:${env.GIT_COMMIT.take(7)}"
         REGISTRY_CREDENTIALS = 'my-docker-hub-creds' 
     }
 
     stages {
-        stage('Initialize'){
+        stage('Clean & Checkout') {
             steps {
-                script {
-                    def dockerHome = tool 'myDocker'
-                    env.PATH = "${dockerHome}/bin:${env.PATH}"
-                }
+                cleanWs() 
+                checkout scm 
             }
-            
         }
 
-        stage('Debug Paths') {
-            steps {
-                    sh 'ls -la ${WORKSPACE}'
-                    sh 'pwd'
-            }
-        }
-		
         stage('SCA Security Scan') {
             steps {
-                    sh '''
-                        docker run --rm \
-                        -v $(pwd):/app \
-                        aquasec/trivy:latest \
-                        fs --severity HIGH,CRITICAL --exit-code 1 /app
-                    '''
+                // Native execution using the host's Docker engine
+                sh '''
+                    docker run --rm \
+                    -v ${WORKSPACE}:/app \
+                    aquasec/trivy:latest \
+                    fs --severity HIGH,CRITICAL --exit-code 1 /app
+                '''
             }
         }
 
         stage('Build Image') {
             steps {
                 script {
-                    echo "Building Docker Image via Shell..."
-                    sh "docker build -t fedi-zero-trust-app:${env.BUILD_ID} ."
+                    echo "Building Docker Image natively..."
+                    sh "docker build -t ${IMAGE_TAG} ."
                 }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                echo "Phase 3 preview: We will put Trivy/Snyk scans here shortly."
             }
         }
 
