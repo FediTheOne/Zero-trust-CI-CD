@@ -36,15 +36,11 @@ pipeline {
             steps {
                 echo "Deploying and applying Host-Based Security Controls..."
                 sh '''
-                    # Create deployment directory if it doesn't exist
-                    sudo mkdir -p ${DEPLOY_DIR}
+                    # No sudo needed! Jenkins naturally has permission to write to this path now.
+                    cp -r ./* /opt/zero-trust-app/
                     
-                    # Copy application files and the verified virtual environment
-                    sudo cp -r . ${DEPLOY_DIR}
-                    
-                    # Enforce strict ownership: appuser owns it, nobody else can modify it
-                    sudo chown -R appuser:appgroup ${DEPLOY_DIR}
-                    sudo chmod -R 750 ${DEPLOY_DIR}
+                    # Ensure the copied files maintain strict 750 permissions
+                    chmod -R 750 /opt/zero-trust-app/
                 '''
             }
         }
