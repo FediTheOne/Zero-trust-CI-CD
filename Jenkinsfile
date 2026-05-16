@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        // Use the Git Commit SHA for unique, immutable tagging
-        IMAGE_TAG = "fedi-zero-trust-app:${env.GIT_COMMIT.take(7)}"
+        // Safely fall back to the Jenkins BUILD_NUMBER if GIT_COMMIT is missing
+        IMAGE_TAG = "fedi-zero-trust-app:${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'my-docker-hub-creds' 
     }
 
@@ -59,8 +59,14 @@ pipeline {
     
     post {
         always {
-            // Clean up local images to prevent Jenkins agent disk bloat
-            sh "docker rmi ${IMAGE_TAG} || true"
+            script {
+                // Check if the variable actually exists before trying to delete it
+                if (env.IMAGE_TAG) {
+                    echo "Cleaning up image: ${env.IMAGE_TAG}"
+                    sh "docker rmi ${env.IMAGE_TAG} || true"
+                } else {
+                    echo "No image tag found. Skipping cleanup."
+                }
+            }
         }
     }
-}
