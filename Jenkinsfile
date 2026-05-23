@@ -52,6 +52,22 @@ pipeline {
             }
         }
 
+        stage('Image Security Scan (Trivy)') {
+            steps {
+                echo "Scanning built Docker image for vulnerabilities..."
+                sh '''
+                docker run --rm \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                -v trivy-cache:/root/.cache/ \
+                aquasec/trivy:0.56.2 \
+                image --severity HIGH,CRITICAL \
+                      --exit-code 1 \
+                      --no-progress \
+                      feditheone2050/zero-trust-app:${BUILD_NUMBER}
+                '''
+            }   
+        }
+
         stage('Secure Deployment') {
             steps {
                 echo "Deploying and applying Host-Based Security Controls..."
