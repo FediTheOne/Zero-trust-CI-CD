@@ -37,8 +37,8 @@ pipeline {
                 echo "Building Docker image..."
                 sh '''
                     docker build \
-                    -t feditheone/zero-trust-app:${BUILD_NUMBER} \
-                    -t feditheone/zero-trust-app:latest \
+                    -t feditheone2050/zero-trust-app:${BUILD_NUMBER} \
+                    -t feditheone2050/zero-trust-app:latest \
                 .
                 '''
             }
