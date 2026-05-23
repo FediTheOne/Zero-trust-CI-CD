@@ -32,6 +32,18 @@ pipeline {
             }
         }
 
+        stage('Docker Build') {
+            steps {
+                echo "Building Docker image..."
+                sh '''
+                    docker build \
+                    -t feditheone/zero-trust-app:${BUILD_NUMBER} \
+                    -t feditheone/zero-trust-app:latest \
+                .
+                '''
+            }
+        }
+
         stage('Secure Deployment') {
             steps {
                 echo "Deploying and applying Host-Based Security Controls..."
