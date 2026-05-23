@@ -16,12 +16,20 @@ pipeline {
 
         stage('SCA Security Scan') {
             steps {
-                echo "Running Native Trivy Scan on the Host..."
-                // Executes natively on Ubuntu without Docker
-                sh "trivy fs --severity HIGH,CRITICAL --exit-code 1 ."
+                echo "Running Trivy filesystem scan in isolated container..."
+                sh '''
+                docker run --rm \
+                -v "$(pwd):/scan:ro" \
+                -v trivy-cache:/root/.cache/ \
+                aquasec/trivy:0.56.2 \
+                fs --severity HIGH,CRITICAL \
+                   --exit-code 1 \
+                   --no-progress \
+                   /scan
+            '''
             }
         }
-
+            
         stage('Build & Verify Venv') {
             steps {
                 echo "Building isolated Python Virtual Environment..."
