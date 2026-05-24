@@ -1,47 +1,40 @@
-# ==========================================
-# Stage 1: Builder (Heavy dependencies)
-# ==========================================
+# Stage 1: Builder
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install OS-level build dependencies (discarded in final image)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential
+# Update system packages BEFORE installing build deps
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends gcc build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create a virtual environment and install dependencies
 COPY requirements.txt .
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ==========================================
-# Stage 2: Runtime (Minimal and Secure)
-# ==========================================
+# Stage 2: Runtime
 FROM python:3.11-slim AS runtime
 
-# Security & performance environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# 1. Create a non-root user and group (Least Privilege)
-RUN addgroup --system appgroup && adduser --system --group appuser
+# Update system packages in the runtime stage too
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# 2. Copy ONLY the compiled dependencies from the builder stage
+RUN addgroup --system --gid 10001 appgroup && \
+    adduser --system --uid 10001 --gid 10001 appuser
+
 COPY --from=builder /opt/venv /opt/venv
+COPY --chown=appuser:appgroup . .
 
-# 3. Copy the actual application code
-COPY . .
-
-# 4. Enforce strict ownership
-RUN chown -R appuser:appgroup /app
-
-# 5. Drop root privileges immediately
 USER appuser
-
 EXPOSE 8080
-
-# 6. Define the execution command
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
