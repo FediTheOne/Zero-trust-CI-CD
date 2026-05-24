@@ -34,21 +34,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Upgrade system packages to pick up latest security patches
-RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+# Upgrade system packages AND system Python tooling
+RUN apk update && apk upgrade && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    rm -rf /var/cache/apk/* /root/.cache/pip
 
-# Create non-root user (BusyBox adduser syntax)
 RUN addgroup -S -g 10001 appgroup && \
     adduser -S -u 10001 -G appgroup appuser
 
-# Copy compiled dependencies from builder
 COPY --from=builder /opt/venv /opt/venv
-
-# Copy application code with correct ownership
 COPY --chown=appuser:appgroup . .
 
 USER appuser
-
 EXPOSE 8080
-
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
