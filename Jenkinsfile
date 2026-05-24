@@ -63,6 +63,7 @@ pipeline {
                 image --severity HIGH,CRITICAL \
                       --exit-code 1 \
                       --no-progress \
+                      --timeout 15m \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
                 '''
             }   
