@@ -116,8 +116,8 @@ pipeline {
 
                 # Run with full zero-trust runtime hardening
                 docker run -d \
-                --name zero-trust-app \
-                -p 8081:8080 \
+                --name zero-trust-app-cicd \
+                -p 8082:8080 \
                 --read-only \
                 --tmpfs /tmp:rw,noexec,nosuid,size=64m \
                 --cap-drop=ALL \
@@ -130,7 +130,7 @@ pipeline {
 
                 # Verify it's running
                 sleep 3
-                docker ps --filter "name=zero-trust-app" --filter "status=running" | grep zero-trust-app
+                docker ps --filter "name=zero-trust-app-cicd" --filter "status=running" | grep zero-trust-app-cicd
             '''
             }
         }
