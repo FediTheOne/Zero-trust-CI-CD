@@ -128,8 +128,8 @@ pipeline {
                 echo "Deploying hardened container from registry..."
                 sh '''
                 # Stop and remove previous instance (ephemeral trust — no carry-over state)
-                docker stop zero-trust-app 2>/dev/null || true
-                docker rm zero-trust-app 2>/dev/null || true
+                docker stop zero-trust-app-cicd 2>/dev/null || true
+                docker rm zero-trust-app-cicd 2>/dev/null || true
 
                 # Pull from registry — proves the artifact passed the full chain
                 docker pull feditheone2050/zero-trust-app:${BUILD_NUMBER}
