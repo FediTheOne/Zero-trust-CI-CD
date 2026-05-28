@@ -41,6 +41,7 @@ pipeline {
                 fs --severity HIGH,CRITICAL \
                    --exit-code 1 \
                    --no-progress \
+                   --timeout 15m \
                    /scan
             '''
             }
