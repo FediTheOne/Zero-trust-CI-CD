@@ -86,16 +86,52 @@ pipeline {
             }   
         }
 
-        stage('Secure Deployment') {
+        stage('Docker Push') {
             steps {
-                echo "Deploying and applying Host-Based Security Controls..."
+                echo "Pushing image to Docker Hub..."
+                withCredentials([usernamePassword(
+                credentialsId: 'dockerhub-creds',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_TOKEN'
+            )]) {
+            sh '''
+                echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                docker push feditheone2050/zero-trust-app:${BUILD_NUMBER}
+                docker logout
+            '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Deploying hardened container from registry..."
                 sh '''
-                    # No sudo needed! Jenkins naturally has permission to write to this path now.
-                    cp -r ./* /opt/zero-trust-app/
-                    
-                    # Ensure the copied files maintain strict 750 permissions
-                    chmod -R 750 /opt/zero-trust-app/
-                '''
+                # Stop and remove previous instance (ephemeral trust — no carry-over state)
+                docker stop zero-trust-app 2>/dev/null || true
+                docker rm zero-trust-app 2>/dev/null || true
+
+                # Pull from registry — proves the artifact passed the full chain
+                docker pull feditheone2050/zero-trust-app:${BUILD_NUMBER}
+
+                # Run with full zero-trust runtime hardening
+                docker run -d \
+                --name zero-trust-app \
+                -p 8081:8080 \
+                --read-only \
+                --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+                --cap-drop=ALL \
+                --security-opt=no-new-privileges \
+                --memory=512m \
+                --cpus=1.0 \
+                --pids-limit=100 \
+                --restart=unless-stopped \
+                feditheone2050/zero-trust-app:${BUILD_NUMBER}
+
+                # Verify it's running
+                sleep 3
+                docker ps --filter "name=zero-trust-app" --filter "status=running" | grep zero-trust-app
+            '''
             }
         }
     }
