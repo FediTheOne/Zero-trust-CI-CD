@@ -46,6 +46,26 @@ pipeline {
             '''
             }
         }
+
+        stage('SAST Scan (Semgrep)') {
+            steps {
+                echo "Running Semgrep static analysis..."
+                sh '''
+                docker run --rm \
+                -v "$(pwd):/src:ro" \
+                returntocorp/semgrep:1.99.0 \
+                semgrep scan \
+                    --config=p/security-audit \
+                    --config=p/secrets \
+                    --config=p/python \
+                    --config=p/flask \
+                    --severity=ERROR \
+                    --error \
+                    --metrics=off \
+                    /src
+                '''
+            }
+        }
             
         stage('Build & Verify Venv') {
             steps {
