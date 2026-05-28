@@ -14,6 +14,22 @@ pipeline {
             }
         }
 
+        stage('Secret Scan (gitleaks)') {
+            steps {
+                echo "Scanning git history for committed secrets..."
+                sh '''
+                docker run --rm \
+                -v "$(pwd):/repo:ro" \
+                zricethezav/gitleaks:v8.21.2 \
+                detect \
+                    --source=/repo \
+                    --no-banner \
+                    --verbose \
+                    --exit-code=1
+                '''
+            }
+        }
+
         stage('SCA Security Scan') {
             steps {
                 echo "Running Trivy filesystem scan in isolated container..."
