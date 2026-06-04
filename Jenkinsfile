@@ -136,23 +136,27 @@ pipeline {
             )
         ]) {
             sh '''
-                # Stage the cosign private key in a container-readable location
+                # Stage the cosign private key
                 TMPKEY=$(mktemp)
                 cp "$COSIGN_KEY_FILE" "$TMPKEY"
                 chmod 644 "$TMPKEY"
 
-                # Login first so a docker config exists
-                echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
-
-                # Stage docker credentials in a container-readable location
+                # Build a minimal config.json — bypasses docker credential helpers
                 TMPCONFIG=$(mktemp -d)
-                cp "$HOME/.docker/config.json" "$TMPCONFIG/config.json"
+                AUTH=$(printf "%s:%s" "$DOCKERHUB_USER" "$DOCKERHUB_TOKEN" | base64 -w 0)
+                cat > "$TMPCONFIG/config.json" <<EOF
+{
+  "auths": {
+    "https://index.docker.io/v1/": {
+      "auth": "$AUTH"
+    }
+  }
+}
+EOF
                 chmod 644 "$TMPCONFIG/config.json"
 
-                # Clean up everything on exit, even on failure
-                trap 'rm -f "$TMPKEY"; rm -rf "$TMPCONFIG"; docker logout' EXIT
+                trap 'rm -f "$TMPKEY"; rm -rf "$TMPCONFIG"' EXIT
 
-                # Sign — DOCKER_CONFIG points cosign at our staged credentials
                 docker run --rm \
                     -e COSIGN_PASSWORD="$COSIGN_PASSWORD" \
                     -e DOCKER_CONFIG=/dockerconfig \
