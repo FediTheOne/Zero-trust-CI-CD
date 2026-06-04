@@ -123,7 +123,7 @@ pipeline {
             }
         }
 
-       stage('Sign Image (Cosign)') {
+        stage('Sign Image (Cosign)') {
             steps {
             echo "Signing image with Cosign..."
             withCredentials([
@@ -136,30 +136,34 @@ pipeline {
             )
         ]) {
             sh '''
-                # Copy the key to a location readable by the cosign container's user
+                # Stage the cosign private key in a container-readable location
                 TMPKEY=$(mktemp)
                 cp "$COSIGN_KEY_FILE" "$TMPKEY"
                 chmod 644 "$TMPKEY"
 
-                # Ensure the temp key is removed on exit, even if cosign fails
-                trap 'rm -f "$TMPKEY"' EXIT
-
-                # Login so cosign can push the signature
+                # Login first so a docker config exists
                 echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
 
-                # Sign the image
+                # Stage docker credentials in a container-readable location
+                TMPCONFIG=$(mktemp -d)
+                cp "$HOME/.docker/config.json" "$TMPCONFIG/config.json"
+                chmod 644 "$TMPCONFIG/config.json"
+
+                # Clean up everything on exit, even on failure
+                trap 'rm -f "$TMPKEY"; rm -rf "$TMPCONFIG"; docker logout' EXIT
+
+                # Sign — DOCKER_CONFIG points cosign at our staged credentials
                 docker run --rm \
                     -e COSIGN_PASSWORD="$COSIGN_PASSWORD" \
+                    -e DOCKER_CONFIG=/dockerconfig \
                     -v "$TMPKEY:/cosign.key:ro" \
-                    -v "$HOME/.docker:/root/.docker:ro" \
+                    -v "$TMPCONFIG:/dockerconfig:ro" \
                     gcr.io/projectsigstore/cosign:v2.4.1 \
                     sign \
                         --key /cosign.key \
                         --yes \
                         feditheone2050/zero-trust-app:${BUILD_NUMBER}
-
-                docker logout
-                '''
+                    '''
                 }
             }
         }
