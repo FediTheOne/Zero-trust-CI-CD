@@ -136,38 +136,30 @@ pipeline {
             )
         ]) {
             sh '''
-                # Stage the cosign private key
-                TMPKEY=$(mktemp)
-                cp "$COSIGN_KEY_FILE" "$TMPKEY"
-                chmod 644 "$TMPKEY"
-
-                # Build a minimal config.json — bypasses docker credential helpers
+                # Build a clean config.json with explicit basic-auth credentials
                 TMPCONFIG=$(mktemp -d)
                 AUTH=$(printf "%s:%s" "$DOCKERHUB_USER" "$DOCKERHUB_TOKEN" | base64 -w 0)
                 cat > "$TMPCONFIG/config.json" <<EOF
 {
   "auths": {
-    "https://index.docker.io/v1/": {
-      "auth": "$AUTH"
-    }
+    "https://index.docker.io/v1/": {"auth": "$AUTH"},
+    "index.docker.io": {"auth": "$AUTH"}
   }
 }
 EOF
-                chmod 644 "$TMPCONFIG/config.json"
 
-                trap 'rm -f "$TMPKEY"; rm -rf "$TMPCONFIG"' EXIT
+                # Cleanup on any exit path
+                trap 'rm -rf "$TMPCONFIG"' EXIT
 
-                docker run --rm \
-                    -e COSIGN_PASSWORD="$COSIGN_PASSWORD" \
-                    -e DOCKER_CONFIG=/dockerconfig \
-                    -v "$TMPKEY:/cosign.key:ro" \
-                    -v "$TMPCONFIG:/dockerconfig:ro" \
-                    gcr.io/projectsigstore/cosign:v2.4.1 \
-                    sign \
-                        --key /cosign.key \
-                        --yes \
-                        feditheone2050/zero-trust-app:${BUILD_NUMBER}
-                    '''
+                # Sign using locally-installed cosign
+                # DOCKER_CONFIG points cosign at our ephemeral config directory
+                COSIGN_PASSWORD="$COSIGN_PASSWORD" \
+                DOCKER_CONFIG="$TMPCONFIG" \
+                cosign sign \
+                    --key "$COSIGN_KEY_FILE" \
+                    --yes \
+                    feditheone2050/zero-trust-app:${BUILD_NUMBER}
+                '''
                 }
             }
         }
