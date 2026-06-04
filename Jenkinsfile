@@ -123,6 +123,39 @@ pipeline {
             }
         }
 
+        stage('Sign Image (Cosign)') {
+            steps {
+                echo "Signing image with Cosign..."
+                withCredentials([
+                file(credentialsId: 'cosign-key', variable: 'COSIGN_KEY_FILE'),
+                string(credentialsId: 'cosign-password', variable: 'COSIGN_PASSWORD'),
+                usernamePassword(
+                credentialsId: 'dockerhub-creds',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_TOKEN'
+            )
+            ]) {
+            sh '''
+                # Login to registry so cosign can push the signature
+                echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+                # Sign the image — containerized, version-pinned, key mounted read-only
+                docker run --rm \
+                    -e COSIGN_PASSWORD="$COSIGN_PASSWORD" \
+                    -v "$COSIGN_KEY_FILE:/cosign.key:ro" \
+                    -v "$HOME/.docker:/root/.docker:ro" \
+                    gcr.io/projectsigstore/cosign:v2.4.1 \
+                    sign \
+                        --key /cosign.key \
+                        --yes \
+                        feditheone2050/zero-trust-app:${BUILD_NUMBER}
+
+                docker logout
+                '''
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 echo "Deploying hardened container from registry..."
