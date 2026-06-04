@@ -123,26 +123,34 @@ pipeline {
             }
         }
 
-        stage('Sign Image (Cosign)') {
+       stage('Sign Image (Cosign)') {
             steps {
-                echo "Signing image with Cosign..."
-                withCredentials([
-                file(credentialsId: 'cosign-key', variable: 'COSIGN_KEY_FILE'),
-                string(credentialsId: 'cosign-password', variable: 'COSIGN_PASSWORD'),
-                usernamePassword(
+            echo "Signing image with Cosign..."
+            withCredentials([
+            file(credentialsId: 'cosign-key', variable: 'COSIGN_KEY_FILE'),
+            string(credentialsId: 'cosign-password', variable: 'COSIGN_PASSWORD'),
+            usernamePassword(
                 credentialsId: 'dockerhub-creds',
                 usernameVariable: 'DOCKERHUB_USER',
                 passwordVariable: 'DOCKERHUB_TOKEN'
             )
-            ]) {
+        ]) {
             sh '''
-                # Login to registry so cosign can push the signature
+                # Copy the key to a location readable by the cosign container's user
+                TMPKEY=$(mktemp)
+                cp "$COSIGN_KEY_FILE" "$TMPKEY"
+                chmod 644 "$TMPKEY"
+
+                # Ensure the temp key is removed on exit, even if cosign fails
+                trap 'rm -f "$TMPKEY"' EXIT
+
+                # Login so cosign can push the signature
                 echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
 
-                # Sign the image — containerized, version-pinned, key mounted read-only
+                # Sign the image
                 docker run --rm \
                     -e COSIGN_PASSWORD="$COSIGN_PASSWORD" \
-                    -v "$COSIGN_KEY_FILE:/cosign.key:ro" \
+                    -v "$TMPKEY:/cosign.key:ro" \
                     -v "$HOME/.docker:/root/.docker:ro" \
                     gcr.io/projectsigstore/cosign:v2.4.1 \
                     sign \
