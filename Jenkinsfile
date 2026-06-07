@@ -164,6 +164,21 @@ EOF
             }
         }
 
+        stage('SBOM Generation (Syft)') {
+            steps {
+            echo "Generating SBOM for built image..."
+            sh '''
+            docker run --rm \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                anchore/syft:v1.18.1 \
+                feditheone2050/zero-trust-app:${BUILD_NUMBER} \
+                -o cyclonedx-json > sbom.json
+            echo "SBOM size: $(wc -c < sbom.json) bytes"
+            '''
+            archiveArtifacts artifacts: 'sbom.json', fingerprint: true
+            }
+        }
+
         stage('Deploy') {
             steps {
                 echo "Deploying hardened container from registry..."
