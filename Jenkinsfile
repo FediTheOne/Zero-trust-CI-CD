@@ -94,6 +94,7 @@ pipeline {
             echo "Scanning built Docker image for vulnerabilities..."
             sh '''
             docker run --rm \
+                -e GODEBUG=http2client=0 \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v trivy-cache:/root/.cache/ \
                 aquasec/trivy:0.56.2 \
@@ -102,7 +103,6 @@ pipeline {
                       --no-progress \
                       --timeout 15m \
                       --scanners vuln \
-                      --disabled-analyzers jar,pom,gradle,gradle-lockfile,sbt \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
             '''
             }
