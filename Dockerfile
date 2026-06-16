@@ -23,6 +23,14 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 # Then install app dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+ARG BUILD_NUMBER=unknown
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIMESTAMP=unknown
+
+ENV BUILD_NUMBER=${BUILD_NUMBER} \
+    GIT_COMMIT=${GIT_COMMIT} \
+    BUILD_TIMESTAMP=${BUILD_TIMESTAMP}
+
 # ==========================================
 # Stage 2: Runtime (Minimal and Secure)
 # ==========================================

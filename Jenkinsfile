@@ -1,6 +1,14 @@
 pipeline {
     agent any 
 
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
+        disableConcurrentBuilds()
+        ansiColor('xterm')
+    }
+
     environment {
         // The secure target directory on the Ubuntu host where the app will live
         DEPLOY_DIR = "/opt/zero-trust-app"
@@ -82,6 +90,9 @@ pipeline {
                 echo "Building Docker image..."
                 sh '''
                     docker build \
+                    --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
+                    --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) \
+                    --build-arg BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
                     -t feditheone2050/zero-trust-app:${BUILD_NUMBER} \
                     -t feditheone2050/zero-trust-app:latest \
                 .
