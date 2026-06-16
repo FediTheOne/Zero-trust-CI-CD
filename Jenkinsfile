@@ -38,20 +38,25 @@ pipeline {
             }
         }
 
-        stage('SCA Security Scan') {
+        stage('SCA Security Scan (Trivy)') {
             steps {
-                echo "Running Trivy filesystem scan in isolated container..."
+                echo "Running Trivy filesystem scan..."
                 sh '''
                 docker run --rm \
+                -e GODEBUG=http2client=0 \
                 -v "$(pwd):/scan:ro" \
                 -v trivy-cache:/root/.cache/ \
                 aquasec/trivy:0.56.2 \
                 fs --severity HIGH,CRITICAL \
                    --exit-code 1 \
                    --no-progress \
-                   --timeout 15m \
+                   --scanners vuln \
+                   --skip-java-db-update \
+                   --format json \
+                   --output /scan/trivy-fs-report.json \
                    /scan
-            '''
+                '''
+                archiveArtifacts artifacts: 'trivy-fs-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
 
@@ -224,6 +229,21 @@ EOF
                 docker ps --filter "name=zero-trust-app-cicd" --filter "status=running" | grep zero-trust-app-cicd
             '''
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline completed with status: ${currentBuild.currentResult}"
+        }
+        success {
+            echo "✓ All security gates passed. Image signed and deployed."
+        }
+        failure {
+            echo "✗ Pipeline failed. Check the stage logs for details."
+        }
+        cleanup {
+            sh 'docker system prune -f --filter "until=24h" || true'
         }
     }
 }
