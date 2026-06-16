@@ -36,7 +36,7 @@ pipeline {
                     --verbose \
                     --exit-code=1
                     --report-format=json \
-                    --report-path=/output/gitleaks-report.json
+                    --report-path=/output/gitleaks-report.json \
                 '''
                 archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true, allowEmptyArchive: true
             }
