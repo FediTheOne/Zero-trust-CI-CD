@@ -45,6 +45,7 @@ pipeline {
                 docker run --rm \
                 -e GODEBUG=http2client=0 \
                 -v "$(pwd):/scan:ro" \
+                -v "$(pwd):/output" \
                 -v trivy-cache:/root/.cache/ \
                 aquasec/trivy:0.56.2 \
                 fs --severity HIGH,CRITICAL \
@@ -53,7 +54,7 @@ pipeline {
                    --scanners vuln \
                    --skip-java-db-update \
                    --format json \
-                   --output /scan/trivy-fs-report.json \
+                   --output /output/trivy-fs-report.json \
                    /scan
                 '''
                 archiveArtifacts artifacts: 'trivy-fs-report.json', fingerprint: true, allowEmptyArchive: true
