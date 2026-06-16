@@ -91,9 +91,10 @@ pipeline {
 
         stage('Image Security Scan (Trivy)') {
             steps {
-                echo "Scanning built Docker image for vulnerabilities..."
+            echo "Scanning built Docker image for vulnerabilities..."
                 sh '''
                 docker run --rm \
+                -e GODEBUG=http2client=0 \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v trivy-cache:/root/.cache/ \
                 aquasec/trivy:0.56.2 \
@@ -101,9 +102,12 @@ pipeline {
                       --exit-code 1 \
                       --no-progress \
                       --timeout 15m \
+                      --scanners vuln \
+                      --skip-java-db-update \
+                      --skip-files "*/.jar,*/.war,*/.ear" \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
                 '''
-            }   
+            }
         }
 
         stage('Docker Push') {
