@@ -28,13 +28,17 @@ pipeline {
                 sh '''
                 docker run --rm \
                 -v "$(pwd):/repo:ro" \
+                -v "$(pwd):/output" \
                 zricethezav/gitleaks:v8.21.2 \
                 detect \
                     --source=/repo \
                     --no-banner \
                     --verbose \
                     --exit-code=1
+                    --report-format=json \
+                    --report-path=/output/gitleaks-report.json
                 '''
+                archiveArtifacts artifacts: 'gitleaks-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
 
@@ -67,6 +71,7 @@ pipeline {
                 sh '''
                 docker run --rm \
                 -v "$(pwd):/src:ro" \
+                -v "$(pwd):/output" \
                 returntocorp/semgrep:1.99.0 \
                 semgrep scan \
                     --config=p/security-audit \
@@ -76,8 +81,10 @@ pipeline {
                     --severity=ERROR \
                     --error \
                     --metrics=off \
+                    --output /output/semgrep-report.json \
                     /src
                 '''
+                archiveArtifacts artifacts: 'semgrep-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
             
@@ -114,6 +121,7 @@ pipeline {
                 -e GODEBUG=http2client=0 \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v trivy-cache:/root/.cache/ \
+                -v "$(pwd):/output" \
                 aquasec/trivy:0.56.2 \
                 image --severity HIGH,CRITICAL \
                       --exit-code 1 \
@@ -122,8 +130,10 @@ pipeline {
                       --scanners vuln \
                       --skip-java-db-update \
                       --skip-files "*/.jar,*/.war,*/.ear" \
+                      --output /output/trivy-image-report.json \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
                 '''
+                archiveArtifacts artifacts: 'trivy-image-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
 
