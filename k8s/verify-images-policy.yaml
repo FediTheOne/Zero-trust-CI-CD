@@ -1,0 +1,43 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-signed-images
+  annotations:
+    policies.kyverno.io/title: "Require Cosign-signed images"
+    policies.kyverno.io/description: >-
+      Every image deployed to the zero-trust namespace must be signed with
+      the project's Cosign key. Cryptographic signature is required;
+      Rekor transparency log verification is skipped due to unreliable
+      network path from this environment to Sigstore infrastructure.
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail
+  rules:
+    - name: verify-all-images-signed
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - zero-trust
+      verifyImages:
+        - imageReferences:
+            - "*"
+          required: true
+          mutateDigest: false
+          verifyDigest: false
+          attestors:
+            - entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuAn1JJ1jxGJwnElCI6egWMy7ci2D
+                      at/aj2toe6yItXELdiwqP+4NIdBmpn6ZClncL/CtLknsIUyKj21pQHAxhQ==
+                      -----END PUBLIC KEY-----
+                    rekor:
+                      ignoreTlog: true
+                    ctlog:
+                      ignoreSCT: true
+

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+  namespace: zero-trust
+spec:
+  containers:
+    - name: bad
+      image: nginx
+      securityContext:
+        runAsUser: 0       # runs as root — not allowed
