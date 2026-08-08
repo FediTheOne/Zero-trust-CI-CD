@@ -1,0 +1,122 @@
+# Default values for zero-trust-app.
+# All configuration is expressed here; templates read from these values.
+
+# ---------------------------------------------------------------------------
+# Image
+# ---------------------------------------------------------------------------
+image:
+  repository: feditheone2050/zero-trust-app
+  # tag is required. Set explicitly on install:  --set image.tag=54
+  # We intentionally do NOT default to "latest" — deployments must reference
+  # a specific signed build number to preserve chain of custody.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ---------------------------------------------------------------------------
+# Deployment
+# ---------------------------------------------------------------------------
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Service account — disabled by default under zero-trust.
+# The application does not need to talk to the Kubernetes API, so no token
+# is mounted.
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  automount: false
+  name: ""
+  annotations: {}
+
+# ---------------------------------------------------------------------------
+# Pod-level security context (least privilege)
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+# ---------------------------------------------------------------------------
+# Container-level security context
+# ---------------------------------------------------------------------------
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop:
+      - ALL
+
+# ---------------------------------------------------------------------------
+# Container port and probes
+# ---------------------------------------------------------------------------
+containerPort: 8080
+
+livenessProbe:
+  httpGet:
+    path: /api/status
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /api/status
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# ---------------------------------------------------------------------------
+# Resource limits (matches --memory=512m --cpus=1.0 --pids-limit=100 from
+# the Phase 1 docker run flags)
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+# ---------------------------------------------------------------------------
+# In-memory /tmp so read-only root filesystem is compatible with Gunicorn
+# ---------------------------------------------------------------------------
+tmpVolume:
+  enabled: true
+  sizeLimit: 64Mi
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: NodePort
+  port: 8080
+  targetPort: 8080
+  nodePort: 30080
+
+# ---------------------------------------------------------------------------
+# NetworkPolicy (zero-trust: deny by default, allow only what's needed)
+# ---------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  # DNS is allowed for hostname resolution
+  allowDns: true
+
+# ---------------------------------------------------------------------------
+# Scheduling
+# ---------------------------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}

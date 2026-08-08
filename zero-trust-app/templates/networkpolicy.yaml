@@ -1,0 +1,60 @@
+{{- if .Values.networkPolicy.enabled -}}
+---
+# 1. Default-deny all ingress and egress in this namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zero-trust-app.fullname" . }}-default-deny
+  labels:
+    {{- include "zero-trust-app.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# 2. Allow ingress to the application on its port
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zero-trust-app.fullname" . }}-allow-app-ingress
+  labels:
+    {{- include "zero-trust-app.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "zero-trust-app.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.containerPort }}
+{{- if .Values.networkPolicy.allowDns }}
+---
+# 3. Allow egress to kube-dns for name resolution
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "zero-trust-app.fullname" . }}-allow-dns
+  labels:
+    {{- include "zero-trust-app.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+{{- end }}

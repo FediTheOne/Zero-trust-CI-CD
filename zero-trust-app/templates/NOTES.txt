@@ -1,0 +1,29 @@
+Zero-Trust App v{{ .Chart.AppVersion }} deployed.
+
+Image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+Access the application:
+
+{{- if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "zero-trust-app.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+  Or on Minikube:
+  minikube service {{ include "zero-trust-app.fullname" . }} -n {{ .Release.Namespace }} --url
+{{- end }}
+
+Verify the image signature independently:
+
+  cosign verify --key cosign.pub {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+Security posture applied:
+  ✓ Non-root user (UID 10001)
+  ✓ Read-only root filesystem
+  ✓ All Linux capabilities dropped
+  ✓ Privilege escalation disabled
+  ✓ Seccomp RuntimeDefault
+  ✓ Service account token not mounted
+{{- if .Values.networkPolicy.enabled }}
+  ✓ NetworkPolicy default-deny with explicit ingress + DNS egress
+{{- end }}

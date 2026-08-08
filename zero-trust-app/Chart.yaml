@@ -1,0 +1,15 @@
+apiVersion: v2
+name: zero-trust-app
+description: A hardened, cryptographically signed application deployed under zero-trust principles.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - zero-trust
+  - devsecops
+  - cosign
+  - kyverno
+maintainers:
+  - name: Fedi
+sources:
+  - https://github.com/FediTheOne/Zero-trust-CI-CD
