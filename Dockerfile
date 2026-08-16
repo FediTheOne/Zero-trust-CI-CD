@@ -44,7 +44,11 @@ WORKDIR /app
 
 # Upgrade system packages AND system Python tooling
 RUN apk update && apk upgrade && \
-    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --upgrade \
+        "setuptools>=78.1.1" \
+        "msgpack>=1.2.1" \
+        pip wheel && \
+    # pip install --no-cache-dir --upgrade pip setuptools wheel && \
     rm -rf /var/cache/apk/* /root/.cache/pip
 
 RUN addgroup -S -g 10001 appgroup && \
