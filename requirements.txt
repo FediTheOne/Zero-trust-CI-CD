@@ -7,3 +7,6 @@ gunicorn==22.0.0
 # Security & Utilities (Fixes File Overwrite & Credential Leaks)
 requests==2.33.0
 python-dotenv==1.2.2
+
+msgpack>=1.2.1
+setuptools>=78.1.1
