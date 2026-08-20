@@ -1,0 +1,6 @@
+# .gitleaksignore
+# False positive: GPG_KEY is the public signing key fingerprint from the
+# python:3.11-alpine base image, captured in a Trivy scan report that was
+# accidentally committed. It is a public key identifier, not a secret.
+fca47cf10efede150a2227bf165f224832b9a77e:trivy.json:generic-api-key:70
+fca47cf10efede150a2227bf165f224832b9a77e:trivy.json:generic-api-key:177
