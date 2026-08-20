@@ -1,0 +1,11 @@
+# .trivyignore
+
+# GHSA-6v7p-g79w-8964 (msgpack 1.1.2 → 1.2.1)
+# Transitive dependency; application does not invoke msgpack Unpacker.
+# Deferred pending dependency audit. Re-evaluate by: 2026-09-15
+GHSA-6v7p-g79w-8964
+
+# CVE-2025-47273 (setuptools 70.3.0 → 78.1.1)
+# setuptools PackageIndex not used at runtime; present only from base image.
+# Deferred pending base image update. Re-evaluate by: 2026-09-15
+CVE-2025-47273
