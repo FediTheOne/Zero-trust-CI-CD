@@ -56,6 +56,26 @@ RUN addgroup -S -g 10001 appgroup && \
 COPY --from=builder /opt/venv /opt/venv
 COPY --chown=appuser:appgroup . .
 
+RUN rm -rf \
+      /usr/local/lib/python3.11/ensurepip \
+      /usr/local/lib/python3.11/site-packages/pip \
+      /usr/local/lib/python3.11/site-packages/pip-*.dist-info \
+      /usr/local/lib/python3.11/site-packages/setuptools \
+      /usr/local/lib/python3.11/site-packages/setuptools-*.dist-info \
+      /usr/local/lib/python3.11/site-packages/wheel \
+      /usr/local/lib/python3.11/site-packages/wheel-*.dist-info \
+      /usr/local/lib/python3.11/site-packages/pkg_resources \
+      /usr/local/lib/python3.11/site-packages/_distutils_hack \
+      /opt/venv/lib/python3.11/ensurepip \
+      /opt/venv/lib/python3.11/site-packages/pip \
+      /opt/venv/lib/python3.11/site-packages/pip-*.dist-info \
+      /opt/venv/lib/python3.11/site-packages/setuptools \
+      /opt/venv/lib/python3.11/site-packages/setuptools-*.dist-info \
+      /opt/venv/lib/python3.11/site-packages/wheel \
+      /opt/venv/lib/python3.11/site-packages/wheel-*.dist-info \
+      /opt/venv/lib/python3.11/site-packages/pkg_resources \
+      /opt/venv/lib/python3.11/site-packages/_distutils_hack
+
 USER appuser
 EXPOSE 8080
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
