@@ -249,6 +249,7 @@ EOF
         }
         success {
             echo "✓ All security gates passed. Image signed and deployed."
+            cleanWs()
         }
         failure {
             echo "✗ Pipeline failed. Check the stage logs for details."
