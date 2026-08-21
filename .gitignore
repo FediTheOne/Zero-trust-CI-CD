@@ -1,0 +1,3 @@
+echo "reports/" >> .gitignore
+git add .gitignorereports/
+reports/

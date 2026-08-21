@@ -46,22 +46,20 @@ pipeline {
             steps {
                 echo "Running Trivy filesystem scan..."
                 sh '''
+                mkdir -p reports
                 docker run --rm \
                 -e GODEBUG=http2client=0 \
                 -v "$(pwd):/scan:ro" \
-                -v "$(pwd):/output" \
+                -v "$(pwd)/reports:/output" \
                 -v trivy-cache:/root/.cache/ \
                 aquasec/trivy:0.56.2 \
                 fs --severity HIGH,CRITICAL \
-                   --exit-code 1 \
-                   --no-progress \
-                   --scanners vuln \
-                   --skip-java-db-update \
-                   --format json \
-                   --output /output/trivy-fs-report.json \
-                   /scan
+                --exit-code 1 --no-progress \
+                --scanners vuln --skip-java-db-update \
+                --format json --output /output/trivy-fs-report.json \
+                /scan
                 '''
-                archiveArtifacts artifacts: 'trivy-fs-report.json', fingerprint: true, allowEmptyArchive: true
+                archiveArtifacts artifacts: 'reports/trivy-fs-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
 
@@ -200,14 +198,14 @@ EOF
             steps {
             echo "Generating SBOM for built image..."
             sh '''
+            mkdir -p reports
             docker run --rm \
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                anchore/syft:v1.18.1 \
-                feditheone2050/zero-trust-app:${BUILD_NUMBER} \
-                -o cyclonedx-json > sbom.json
-            echo "SBOM size: $(wc -c < sbom.json) bytes"
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            anchore/syft:v1.18.1 \
+            feditheone2050/zero-trust-app:${BUILD_NUMBER} \
+            -o cyclonedx-json > reports/sbom.json
             '''
-            archiveArtifacts artifacts: 'sbom.json', fingerprint: true
+            archiveArtifacts artifacts: 'reports/sbom.json', fingerprint: true
             }
         }
 
