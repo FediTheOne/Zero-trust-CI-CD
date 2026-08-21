@@ -115,13 +115,14 @@ pipeline {
 
         stage('Image Security Scan (Trivy)') {
             steps {
-            echo "Scanning built Docker image for vulnerabilities..."
+                echo "Scanning built Docker image for vulnerabilities..."
                 sh '''
+                mkdir -p reports
                 docker run --rm \
                 -e GODEBUG=http2client=0 \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v trivy-cache:/root/.cache/ \
-                -v "$(pwd):/output" \
+                -v "$(pwd)/reports:/output" \
                 aquasec/trivy:0.56.2 \
                 image --severity HIGH,CRITICAL \
                       --exit-code 1 \
@@ -129,11 +130,11 @@ pipeline {
                       --timeout 15m \
                       --scanners vuln \
                       --skip-java-db-update \
-                      --skip-files "*/.jar,*/.war,*/.ear" \
+                      --format json \
                       --output /output/trivy-image-report.json \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
                 '''
-                archiveArtifacts artifacts: 'trivy-image-report.json', fingerprint: true, allowEmptyArchive: true
+                archiveArtifacts artifacts: 'reports/trivy-image-report.json', fingerprint: true, allowEmptyArchive: true
             }
         }
 
