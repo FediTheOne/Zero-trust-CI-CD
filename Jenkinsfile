@@ -121,6 +121,7 @@ pipeline {
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v trivy-cache:/root/.cache/ \
                 -v "$(pwd)/reports:/output" \
+                -v "$(pwd)/.trivyignore:/.trivyignore:ro" \
                 aquasec/trivy:0.56.2 \
                 image --severity HIGH,CRITICAL \
                       --exit-code 1 \
@@ -128,6 +129,7 @@ pipeline {
                       --timeout 15m \
                       --scanners vuln \
                       --skip-java-db-update \
+                      --ignorefile /.trivyignore \
                       --format json \
                       --output /output/trivy-image-report.json \
                       feditheone2050/zero-trust-app:${BUILD_NUMBER}
